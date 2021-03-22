@@ -303,7 +303,7 @@ func DumpLGCFile(fileName string) error {
 
 		for vectorID := 0; vectorID < int(entry.item.VectorCount); vectorID++ {
 			vector := vectors[vectorID]
-			fmt.Printf("\t\t#%d: ", vectorID)
+			fmt.Printf("\t\t#%03d: ", vectorID)
 
 			for vecByte := 0; vecByte < int(entry.item.PinCount/2); vecByte++ {
 				pinLow := mapVector(vector.Vectors[vecByte] >> 4)
