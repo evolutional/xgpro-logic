@@ -80,7 +80,7 @@ vectors = [
 
 Each line in the `vectors` array is a string that contains a character indicating the logic level for the test. These match those used in the Xgpro tool itself, but they're listed here:
 
-Symbol | Diretion | Description
+Symbol | Direction | Description
 --- | --- | --
 0 | Input | Logic LOW
 1 | Input | Logic HIGH
