@@ -1,8 +1,8 @@
 # XGPRO-Logic
 
-The programmer has a useful "IC Test" function that allows one to run logic tests on a chip. However the user interface for working with that functionality is... not great.
-
 This is a little commandline utility that makes working with the XGecu Universal Programmer a little bit nicer.
+
+The programmer has a useful "IC Test" function that allows one to run logic tests on a chip. However the user interface for working with that functionality is... not great.
 
 It allows you to inspect `.lgc` files and convert them to/from [toml](https://github.com/toml-lang/toml) format.
 
