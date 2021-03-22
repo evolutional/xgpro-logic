@@ -1,0 +1,19 @@
+[[ics]]
+# Example IC definition
+name = "OLI's IC"
+pins = 8
+vcc = 5
+vectors = [
+    "100G000V",
+    "010G000V",
+]
+
+[[ics]]
+# Example IC definition
+name = "Another IC"
+pins = 10
+vcc = 3.3
+vectors = [
+    "1000G0000V",
+    "0100G0000V",
+]
