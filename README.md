@@ -10,7 +10,29 @@ With the file in a toml format you can add your own logic vector descriptions mu
 
 ## Usage
 
-The application has three commands:
+The application has three commands.
+
+For more information run `./xgpro-logic --help`
+
+```
+Usage: xgpro-logic <command>
+
+Flags:
+  -h, --help              Show context-sensitive help.
+      --version=STRING
+
+Commands:
+  describe <path>
+    Describes an .lgc file to stdout
+
+  lgc <path> <output-path>
+    Create a lgc file from a toml file
+
+  toml <path> <output-path>
+    Create a toml file from a lgc file
+
+Run "xgpro-logic <command> --help" for more information on a command.
+```
 
 ### Describe
 `describe <path>` which reads an `.lgc` file and prints some information about the contents:
