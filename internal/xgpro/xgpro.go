@@ -113,12 +113,12 @@ func ParseTomlFile(fileName string) (*lgcFile, error) {
 	return parseJsonFile(&f)
 }
 
-func DescribeToml(lgc *lgcFile) error {
+func DescribeToml(lgc *lgcFile, file *os.File) error {
 	writer := bufio.NewWriter(os.Stdout)
 	return writeToml(writer, lgc)
 }
 
-func DescribeJson(lgc *lgcFile) error {
+func DescribeJson(lgc *lgcFile, file *os.File) error {
 	writer := bufio.NewWriter(os.Stdout)
 	return writeJson(writer, lgc)
 }
@@ -223,20 +223,18 @@ func ConvertFile(inputFileName string, inputFormat string, outputFileName string
 	return WriteLgc(outputFileName, lgc)
 }
 
-func DumpLGCFile(lgc *lgcFile) error {
+func DumpLGCFile(lgc *lgcFile, file *os.File) error {
 	fileHeader := &lgc.header
 
-	fmt.Println()
-	fmt.Printf("File contains %d entries", fileHeader.ItemCount)
-	fmt.Println()
+	fmt.Fprintf(file, "File contains %d entries\n", fileHeader.ItemCount)
 	for itemID := 0; itemID < int(fileHeader.ItemCount); itemID++ {
 
 		entry := lgc.entries[itemID]
 		vectors := lgc.entries[itemID].vectors
 
-		fmt.Printf("Entry #%d\n", itemID)
-		fmt.Printf("\tName:\t%s\n", string(entry.item.ItemName[:]))
-		fmt.Printf("\tPins:\t%d\n", entry.item.PinCount)
+		fmt.Fprintf(file, "Entry #%d\n", itemID)
+		fmt.Fprintf(file, "\tName:\t%s\n", string(entry.item.ItemName[:]))
+		fmt.Fprintf(file, "\tPins:\t%d\n", entry.item.PinCount)
 
 		vcc := "INVALID"
 
@@ -251,19 +249,19 @@ func DumpLGCFile(lgc *lgcFile) error {
 			vcc = "1.8V"
 		}
 
-		fmt.Printf("\tVCC:\t%s\n", vcc)
-		fmt.Printf("\tVectors: %d\n", entry.item.VectorCount)
+		fmt.Fprintf(file, "\tVCC:\t%s\n", vcc)
+		fmt.Fprintf(file, "\tVectors: %d\n", entry.item.VectorCount)
 
 		for vectorID := 0; vectorID < int(entry.item.VectorCount); vectorID++ {
 			vector := vectors[vectorID]
-			fmt.Printf("\t\t#%03d: ", vectorID)
+			fmt.Fprintf(file, "\t\t#%03d: ", vectorID)
 
 			for vecByte := 0; vecByte < int(entry.item.PinCount/2); vecByte++ {
 				pinLow := mapVector(vector.Vectors[vecByte] >> 4)
 				pinHigh := mapVector(vector.Vectors[vecByte] & 0x0F)
-				fmt.Printf("%s %s ", pinHigh, pinLow)
+				fmt.Fprintf(file, "%s %s ", pinHigh, pinLow)
 			}
-			fmt.Println()
+			fmt.Fprintln(file)
 		}
 	}
 

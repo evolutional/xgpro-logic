@@ -1,6 +1,8 @@
 package main
 
 import (
+	"os"
+
 	"github.com/alecthomas/kong"
 
 	"github.com/evolutional/xgpro-logic/internal/xgpro"
@@ -10,9 +12,10 @@ type Globals struct {
 }
 
 type ViewCmd struct {
-	Path string `arg required help:"Input path." type:"path"`
-	Toml bool   `xor:"format" help:"Output as toml" type:"bool"`
-	Json bool   `xor:"format" help:"Output as json" type:"bool"`
+	Path       string `arg required help:"Input path." type:"path"`
+	Toml       bool   `xor:"format" help:"Output as toml" type:"bool"`
+	Json       bool   `xor:"format" help:"Output as json" type:"bool"`
+	OutputFile string `short:"o" help:"Output file path." type:"path"`
 }
 
 type CreateLgcCmd struct {
@@ -27,14 +30,23 @@ func (cmd *ViewCmd) Run(globals *Globals) error {
 		return err
 	}
 
-	if cmd.Toml {
-		return xgpro.DescribeToml(lgc)
-	}
-	if cmd.Json {
-		return xgpro.DescribeJson(lgc)
+	file := os.Stdout
+
+	if cmd.OutputFile != "" {
+		file, err = os.Create(cmd.OutputFile)
+		if err != nil {
+			return err
+		}
 	}
 
-	return xgpro.DumpLGCFile(lgc)
+	if cmd.Toml {
+		return xgpro.DescribeToml(lgc, file)
+	}
+	if cmd.Json {
+		return xgpro.DescribeJson(lgc, file)
+	}
+
+	return xgpro.DumpLGCFile(lgc, file)
 }
 
 func (cmd *CreateLgcCmd) Run(globals *Globals) error {
