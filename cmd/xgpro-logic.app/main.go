@@ -7,7 +7,6 @@ import (
 )
 
 type Globals struct {
-	Version string
 }
 
 type ViewCmd struct {
@@ -52,9 +51,7 @@ type CLI struct {
 func main() {
 
 	cli := CLI{
-		Globals: Globals{
-			Version: "0.0.1",
-		},
+		Globals: Globals{},
 	}
 
 	ctx := kong.Parse(&cli,
