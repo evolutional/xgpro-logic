@@ -12,6 +12,8 @@ type Globals struct {
 
 type ViewCmd struct {
 	Path string `arg required help:"Input path." type:"path"`
+	Toml bool   `help:"Output as toml" type:"bool"`
+	Json bool   `help:"Output as json" type:"bool"`
 }
 
 type CreateLgcCmd struct {
@@ -25,7 +27,19 @@ type CreateTomlCmd struct {
 }
 
 func (cmd *ViewCmd) Run(globals *Globals) error {
-	return xgpro.DumpLGCFile(cmd.Path)
+	lgc, err := xgpro.ParseLGCFile(cmd.Path)
+	if err != nil {
+		return err
+	}
+
+	if cmd.Toml {
+		return xgpro.DescribeToml(lgc)
+	}
+	if cmd.Json {
+		return xgpro.DescribeJson(lgc)
+	}
+
+	return xgpro.DumpLGCFile(lgc)
 }
 
 func (cmd *CreateLgcCmd) Run(globals *Globals) error {

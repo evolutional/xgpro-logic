@@ -147,6 +147,16 @@ func ParseTomlFile(fileName string) (*lgcFile, error) {
 	return &lgc, nil
 }
 
+func DescribeToml(lgc *lgcFile) error {
+	writer := bufio.NewWriter(os.Stdout)
+	return writeToml(writer, lgc)
+}
+
+func DescribeJson(lgc *lgcFile) error {
+	writer := bufio.NewWriter(os.Stdout)
+	return writeJson(writer, lgc)
+}
+
 func WriteToml(fileName string, lgc *lgcFile) error {
 
 	file, err := os.Create(fileName)
@@ -157,42 +167,7 @@ func WriteToml(fileName string, lgc *lgcFile) error {
 	defer file.Close()
 
 	writer := bufio.NewWriter(file)
-
-	for icID := 0; icID < int(lgc.header.ItemCount); icID++ {
-		entry := &lgc.entries[icID]
-
-		itemName := string(entry.item.ItemName[:])
-		itemName = strings.Map(func(r rune) rune {
-			if unicode.IsPrint(r) {
-				return r
-			}
-			return -1
-		}, itemName)
-
-		writer.WriteString("[[ics]]\n")
-		fmt.Fprintf(writer, "name = \"%s\"\n", itemName)
-		fmt.Fprintf(writer, "pins = %d\n", entry.item.PinCount)
-		fmt.Fprintf(writer, "vcc = %0.1f\n", unmapVoltageLevel(entry.item.VoltageLevel))
-		fmt.Fprintf(writer, "vectors = [\n")
-
-		for vectorID := 0; vectorID < int(entry.item.VectorCount); vectorID++ {
-
-			vectorStr := ""
-			vector := entry.vectors[vectorID]
-
-			for vecByte := 0; vecByte < int(entry.item.PinCount/2); vecByte++ {
-				pinLow := mapVector(vector.Vectors[vecByte] >> 4)
-				pinHigh := mapVector(vector.Vectors[vecByte] & 0x0F)
-				vectorStr = fmt.Sprintf("%s%s%s", vectorStr, pinHigh, pinLow)
-			}
-
-			fmt.Fprintf(writer, "\t\"%s\",\n", vectorStr)
-		}
-		fmt.Fprintf(writer, "]\n")
-	}
-
-	writer.Flush()
-	return nil
+	return writeToml(writer, lgc)
 }
 
 func WriteLgc(fileName string, lgc *lgcFile) error {
@@ -265,12 +240,7 @@ func ParseLGCFile(fileName string) (*lgcFile, error) {
 	return &lgc, nil
 }
 
-func DumpLGCFile(fileName string) error {
-	lgc, err := ParseLGCFile(fileName)
-	if err != nil {
-		return err
-	}
-
+func DumpLGCFile(lgc *lgcFile) error {
 	fileHeader := &lgc.header
 
 	fmt.Println()
@@ -443,4 +413,84 @@ func parseVectorString(vectorStr string) (*lgcLogicVectors, error) {
 		}
 	}
 	return &result, nil
+}
+
+func writeToml(writer *bufio.Writer, lgc *lgcFile) error {
+	for icID := 0; icID < int(lgc.header.ItemCount); icID++ {
+		entry := &lgc.entries[icID]
+
+		itemName := string(entry.item.ItemName[:])
+		itemName = strings.Map(func(r rune) rune {
+			if unicode.IsPrint(r) {
+				return r
+			}
+			return -1
+		}, itemName)
+
+		writer.WriteString("[[ics]]\n")
+		fmt.Fprintf(writer, "name = \"%s\"\n", itemName)
+		fmt.Fprintf(writer, "pins = %d\n", entry.item.PinCount)
+		fmt.Fprintf(writer, "vcc = %0.1f\n", unmapVoltageLevel(entry.item.VoltageLevel))
+		fmt.Fprintf(writer, "vectors = [\n")
+
+		for vectorID := 0; vectorID < int(entry.item.VectorCount); vectorID++ {
+
+			vectorStr := ""
+			vector := entry.vectors[vectorID]
+
+			for vecByte := 0; vecByte < int(entry.item.PinCount/2); vecByte++ {
+				pinLow := mapVector(vector.Vectors[vecByte] >> 4)
+				pinHigh := mapVector(vector.Vectors[vecByte] & 0x0F)
+				vectorStr = fmt.Sprintf("%s%s%s", vectorStr, pinHigh, pinLow)
+			}
+
+			fmt.Fprintf(writer, "\t\"%s\",\n", vectorStr)
+		}
+		fmt.Fprintf(writer, "]\n")
+	}
+	writer.Flush()
+	return nil
+}
+
+func writeJson(writer *bufio.Writer, lgc *lgcFile) error {
+	writer.WriteString("[\n")
+	for icID := 0; icID < int(lgc.header.ItemCount); icID++ {
+		entry := &lgc.entries[icID]
+
+		itemName := string(entry.item.ItemName[:])
+		itemName = strings.Map(func(r rune) rune {
+			if unicode.IsPrint(r) {
+				return r
+			}
+			return -1
+		}, itemName)
+
+		writer.WriteString("\t{")
+		fmt.Fprintf(writer, " \"name\": \"%s\",", itemName)
+		fmt.Fprintf(writer, " \"pins\": %d,", entry.item.PinCount)
+		fmt.Fprintf(writer, " \"vcc\": %0.1f,", unmapVoltageLevel(entry.item.VoltageLevel))
+		fmt.Fprintf(writer, " \"vectors\": [")
+
+		for vectorID := 0; vectorID < int(entry.item.VectorCount); vectorID++ {
+
+			vectorStr := ""
+			vector := entry.vectors[vectorID]
+
+			for vecByte := 0; vecByte < int(entry.item.PinCount/2); vecByte++ {
+				pinLow := mapVector(vector.Vectors[vecByte] >> 4)
+				pinHigh := mapVector(vector.Vectors[vecByte] & 0x0F)
+				vectorStr = fmt.Sprintf("%s%s%s", vectorStr, pinHigh, pinLow)
+			}
+			sep := ", "
+			if vectorID == int(entry.item.VectorCount)-1 {
+				sep = ""
+			}
+			fmt.Fprintf(writer, "\"%s\"%s", vectorStr, sep)
+		}
+		fmt.Fprintf(writer, "] }\n")
+	}
+
+	writer.WriteString("]\n")
+	writer.Flush()
+	return nil
 }
