@@ -78,6 +78,24 @@ type tomlIC struct {
 	Vectors []string
 }
 
+func ParseJsonFile(fileName string) (*lgcFile, error) {
+	file, err := os.Open(fileName)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to open file: %s", err)
+	}
+	defer file.Close()
+
+	decoder := json.NewDecoder(file)
+
+	f := tomlFile{}
+	err = decoder.Decode(&f)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to decode json file: %s", err)
+	}
+
+	return parseJsonFile(&f)
+}
+
 func ParseTomlFile(fileName string) (*lgcFile, error) {
 	file, err := os.Open(fileName)
 	if err != nil {
@@ -92,59 +110,7 @@ func ParseTomlFile(fileName string) (*lgcFile, error) {
 	if err != nil {
 		return nil, fmt.Errorf("Failed to decode toml file: %s", err)
 	}
-
-	lgc := lgcFile{
-		header: lgcFileHeader{
-			AllCrc32:  0,
-			ItemCount: uint32(len(f.ICs)),
-			Res:       0,
-			UIFlag:    lgcFileFlag,
-		},
-		entries: make([]lgcFileEntry, len(f.ICs)),
-	}
-
-	crcTable := crc32.IEEETable
-	hashValue := uint32(0)
-
-	for icID := 0; icID < len(f.ICs); icID++ {
-		s := f.ICs[icID]
-
-		paddedName := []byte(fmt.Sprintf("%-32s", s.Name))
-		paddedName[len(s.Name)] = 0
-
-		item := lgcFileItem{
-			PinCount:     byte(s.Pins),
-			VoltageLevel: mapVoltageLevel(s.Vcc),
-			VectorCount:  uint32(len(s.Vectors)),
-		}
-
-		copy(item.ItemName[:], paddedName[:32])
-
-		binBuf := bytes.Buffer{}
-		binary.Write(&binBuf, binary.LittleEndian, item)
-		hashValue = crc32.Update(hashValue, crcTable, binBuf.Bytes())
-
-		entry := &lgc.entries[icID]
-		entry.item = item
-		entry.vectors = make([]lgcLogicVectors, len(s.Vectors))
-
-		for vectorID := 0; vectorID < len(s.Vectors); vectorID++ {
-			v, err := parseVectorString(s.Vectors[vectorID])
-			if err != nil {
-				return nil, fmt.Errorf("Failed to process vector (%d): %s", vectorID, err)
-			}
-
-			entry.vectors[vectorID] = *v
-
-			binBuf.Reset()
-			binary.Write(&binBuf, binary.LittleEndian, *v)
-			hashValue = crc32.Update(hashValue, crcTable, binBuf.Bytes())
-		}
-	}
-
-	lgc.header.AllCrc32 = hashValue
-
-	return &lgc, nil
+	return parseJsonFile(&f)
 }
 
 func DescribeToml(lgc *lgcFile) error {
@@ -238,6 +204,23 @@ func ParseLGCFile(fileName string) (*lgcFile, error) {
 	}
 
 	return &lgc, nil
+}
+
+func ConvertFile(inputFileName string, inputFormat string, outputFileName string) error {
+	var lgc *lgcFile
+	var err error
+
+	switch inputFormat {
+	case "toml":
+		lgc, err = ParseTomlFile(inputFileName)
+	case "json":
+		lgc, err = ParseJsonFile(inputFileName)
+	}
+
+	if err != nil {
+		return err
+	}
+	return WriteLgc(outputFileName, lgc)
 }
 
 func DumpLGCFile(lgc *lgcFile) error {
@@ -415,18 +398,23 @@ func parseVectorString(vectorStr string) (*lgcLogicVectors, error) {
 	return &result, nil
 }
 
+func cleanItemName(input [32]byte) string {
+	itemName := string(input[:])
+	itemName = strings.Map(func(r rune) rune {
+		if unicode.IsPrint(r) {
+			return r
+		}
+		return -1
+	}, itemName)
+	itemName = strings.Trim(itemName, " ")
+	return itemName
+}
+
 func writeToml(writer *bufio.Writer, lgc *lgcFile) error {
 	for icID := 0; icID < int(lgc.header.ItemCount); icID++ {
 		entry := &lgc.entries[icID]
 
-		itemName := string(entry.item.ItemName[:])
-		itemName = strings.Map(func(r rune) rune {
-			if unicode.IsPrint(r) {
-				return r
-			}
-			return -1
-		}, itemName)
-
+		itemName := cleanItemName(entry.item.ItemName)
 		writer.WriteString("[[ics]]\n")
 		fmt.Fprintf(writer, "name = \"%s\"\n", itemName)
 		fmt.Fprintf(writer, "pins = %d\n", entry.item.PinCount)
@@ -453,19 +441,13 @@ func writeToml(writer *bufio.Writer, lgc *lgcFile) error {
 }
 
 func writeJson(writer *bufio.Writer, lgc *lgcFile) error {
-	writer.WriteString("[\n")
+	writer.WriteString("{ \"ics\": [")
 	for icID := 0; icID < int(lgc.header.ItemCount); icID++ {
 		entry := &lgc.entries[icID]
 
-		itemName := string(entry.item.ItemName[:])
-		itemName = strings.Map(func(r rune) rune {
-			if unicode.IsPrint(r) {
-				return r
-			}
-			return -1
-		}, itemName)
+		itemName := cleanItemName(entry.item.ItemName)
 
-		writer.WriteString("\t{")
+		writer.WriteString("{")
 		fmt.Fprintf(writer, " \"name\": \"%s\",", itemName)
 		fmt.Fprintf(writer, " \"pins\": %d,", entry.item.PinCount)
 		fmt.Fprintf(writer, " \"vcc\": %0.1f,", unmapVoltageLevel(entry.item.VoltageLevel))
@@ -487,10 +469,71 @@ func writeJson(writer *bufio.Writer, lgc *lgcFile) error {
 			}
 			fmt.Fprintf(writer, "\"%s\"%s", vectorStr, sep)
 		}
-		fmt.Fprintf(writer, "] }\n")
+		fmt.Fprintf(writer, "] }")
+
+		if icID < int(lgc.header.ItemCount)-1 {
+			fmt.Fprintf(writer, ", ")
+		}
+
 	}
 
-	writer.WriteString("]\n")
+	writer.WriteString("]}\n")
 	writer.Flush()
 	return nil
+}
+
+func parseJsonFile(f *tomlFile) (*lgcFile, error) {
+
+	lgc := lgcFile{
+		header: lgcFileHeader{
+			AllCrc32:  0,
+			ItemCount: uint32(len(f.ICs)),
+			Res:       0,
+			UIFlag:    lgcFileFlag,
+		},
+		entries: make([]lgcFileEntry, len(f.ICs)),
+	}
+
+	crcTable := crc32.IEEETable
+	hashValue := uint32(0)
+
+	for icID := 0; icID < len(f.ICs); icID++ {
+		s := f.ICs[icID]
+
+		paddedName := []byte(fmt.Sprintf("%-32s", s.Name))
+		paddedName[len(s.Name)] = 0
+
+		item := lgcFileItem{
+			PinCount:     byte(s.Pins),
+			VoltageLevel: mapVoltageLevel(s.Vcc),
+			VectorCount:  uint32(len(s.Vectors)),
+		}
+
+		copy(item.ItemName[:], paddedName[:32])
+
+		binBuf := bytes.Buffer{}
+		binary.Write(&binBuf, binary.LittleEndian, item)
+		hashValue = crc32.Update(hashValue, crcTable, binBuf.Bytes())
+
+		entry := &lgc.entries[icID]
+		entry.item = item
+		entry.vectors = make([]lgcLogicVectors, len(s.Vectors))
+
+		for vectorID := 0; vectorID < len(s.Vectors); vectorID++ {
+			v, err := parseVectorString(s.Vectors[vectorID])
+			if err != nil {
+				return nil, fmt.Errorf("Failed to process vector (%d): %s", vectorID, err)
+			}
+
+			entry.vectors[vectorID] = *v
+
+			binBuf.Reset()
+			binary.Write(&binBuf, binary.LittleEndian, *v)
+			hashValue = crc32.Update(hashValue, crcTable, binBuf.Bytes())
+		}
+	}
+
+	lgc.header.AllCrc32 = hashValue
+
+	return &lgc, nil
 }

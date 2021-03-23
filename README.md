@@ -28,14 +28,28 @@ Commands:
   lgc <path> <output-path>
     Create a lgc file from a toml file
 
-  toml <path> <output-path>
-    Create a toml file from a lgc file
-
 Run "xgpro-logic <command> --help" for more information on a command.
 ```
 
 ### Describe
-`describe <path>` which reads an `.lgc` file and prints some information about the contents:
+
+```
+Usage: xgpro-logic describe <path>
+
+Describes an .lgc file to stdout
+
+Arguments:
+  <path>    Input path.
+
+Flags:
+  -h, --help              Show context-sensitive help.
+      --version=STRING
+
+      --toml              Output as toml
+      --json              Output as json
+```
+
+`describe <path>` which reads an `.lgc` file and dumps some information about the contents to stdout:
 
 ```
 File contains 1 entries
@@ -48,13 +62,30 @@ Entry #0
                 #1: 0 1 0 G 0 0 0 V 
 ```
 
-### TOML
-`toml <input> <output>` reads an `.lgc` file and outputs a `.toml` file that describes it
+You can supply the optional flags `--toml` or `--json` to pipe the data into another tool (such as `jq`).
 
 ### LGC
-`lgc <input> <output>` reads a `.toml` file and outputs an `.lgc` file that can be imported into the Xgpro tool
+`lgc <input> <output>` reads an input file and outputs an `.lgc` file that can be imported into the Xgpro tool.
 
-## Example TOML file
+```
+Usage: xgpro-logic lgc <path> <output-path>
+
+Create a lgc file from an input file
+
+Arguments:
+  <path>           Input path.
+  <output-path>    Output path of created lgc file.
+
+Flags:
+  -h, --help                   Show context-sensitive help.
+      --version=STRING
+
+  -f, --input-format="toml"
+```
+
+The input format can either be `toml` or `json`.
+
+### Example TOML file
 
 ```toml
 [[ics]]
@@ -91,6 +122,36 @@ C | Input | Clock Pulse
 X | - | Ignored
 V | Input | VCC
 G | Input | Ground
+
+### Example Json file
+
+The json format is structurally identical to the `toml` format.
+
+```json
+{
+    "ics": [
+        {
+            "name": "OLI's IC",
+            "pins": 8,
+            "vcc": 5,
+            "vectors": [
+                "100G000V",
+                "010G000V"
+            ]
+        },
+        {
+            "name": "Another IC",
+            "pins": 10,
+            "vcc": 3.3,
+            "vectors": [
+                "1000G0000V",
+                "0100G0000V"
+            ]
+        }
+    ]
+}
+```
+
 
 ## Building
 

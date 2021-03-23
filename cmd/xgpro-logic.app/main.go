@@ -12,18 +12,14 @@ type Globals struct {
 
 type ViewCmd struct {
 	Path string `arg required help:"Input path." type:"path"`
-	Toml bool   `help:"Output as toml" type:"bool"`
-	Json bool   `help:"Output as json" type:"bool"`
+	Toml bool   `xor:"format" help:"Output as toml" type:"bool"`
+	Json bool   `xor:"format" help:"Output as json" type:"bool"`
 }
 
 type CreateLgcCmd struct {
-	Path       string `arg required help:"Input path." type:"path"`
-	OutputPath string `arg required help:"Output path of created lgc file." type:"path"`
-}
-
-type CreateTomlCmd struct {
-	Path       string `arg required help:"Input path." type:"path"`
-	OutputPath string `arg required help:"Output path of created toml file." type:"path"`
+	Path        string `arg required help:"Input path." type:"path"`
+	OutputPath  string `arg required help:"Output path of created lgc file." type:"path"`
+	InputFormat string `short:"f" enum:"json,toml" default:"toml" help"Format of the input file"`
 }
 
 func (cmd *ViewCmd) Run(globals *Globals) error {
@@ -43,27 +39,14 @@ func (cmd *ViewCmd) Run(globals *Globals) error {
 }
 
 func (cmd *CreateLgcCmd) Run(globals *Globals) error {
-	lgc, err := xgpro.ParseTomlFile(cmd.Path)
-	if err != nil {
-		return err
-	}
-	return xgpro.WriteLgc(cmd.OutputPath, lgc)
-}
-
-func (cmd *CreateTomlCmd) Run(globals *Globals) error {
-	lgc, err := xgpro.ParseLGCFile(cmd.Path)
-	if err != nil {
-		return err
-	}
-	return xgpro.WriteToml(cmd.OutputPath, lgc)
+	return xgpro.ConvertFile(cmd.Path, cmd.InputFormat, cmd.OutputPath)
 }
 
 type CLI struct {
 	Globals
 
-	Describe ViewCmd       `cmd help:"Describes an .lgc file to stdout"`
-	Lgc      CreateLgcCmd  `cmd help:"Create a lgc file from a toml file"`
-	Toml     CreateTomlCmd `cmd help:"Create a toml file from a lgc file"`
+	Describe ViewCmd      `cmd help:"Describes an .lgc file to stdout"`
+	Lgc      CreateLgcCmd `cmd help:"Create a lgc file from an input file"`
 }
 
 func main() {
