@@ -123,6 +123,11 @@ func DescribeJson(lgc *lgcFile, file *os.File) error {
 	return writeJson(writer, lgc)
 }
 
+func DescribeXml(lgc *lgcFile, file *os.File) error {
+	writer := bufio.NewWriter(os.Stdout)
+	return writeXml(writer, lgc)
+}
+
 func WriteToml(fileName string, lgc *lgcFile) error {
 
 	file, err := os.Create(fileName)
@@ -476,6 +481,43 @@ func writeJson(writer *bufio.Writer, lgc *lgcFile) error {
 	}
 
 	writer.WriteString("]}\n")
+	writer.Flush()
+	return nil
+}
+
+func writeXml(writer *bufio.Writer, lgc *lgcFile) error {
+	writer.WriteString("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n")
+	writer.WriteString("<infoic>\n")
+	writer.WriteString("  <database device=\"TL866II\">\n")
+	writer.WriteString("    <manufacturer name=\"Logic Ic\">\n")
+	for icID := 0; icID < int(lgc.header.ItemCount); icID++ {
+		entry := &lgc.entries[icID]
+
+		itemName := cleanItemName(entry.item.ItemName)
+
+		writer.WriteString("      <ic ")
+		fmt.Fprintf(writer, "name=\"%s\" ", itemName)
+		fmt.Fprintf(writer, "pins=\"%d\" ", entry.item.PinCount)
+		fmt.Fprintf(writer, "voltage=\"%0.1fV\" type=\"5\">\n", unmapVoltageLevel(entry.item.VoltageLevel))
+
+		for vectorID := 0; vectorID < int(entry.item.VectorCount); vectorID++ {
+
+			vectorStr := fmt.Sprintf("        <vector id=\"%02d\">", vectorID)
+			vector := entry.vectors[vectorID]
+
+			for vecByte := 0; vecByte < int(entry.item.PinCount/2); vecByte++ {
+				pinLow := mapVector(vector.Vectors[vecByte] >> 4)
+				pinHigh := mapVector(vector.Vectors[vecByte] & 0x0F)
+				vectorStr = fmt.Sprintf("%s %s %s", vectorStr, pinHigh, pinLow)
+			}
+			fmt.Fprintf(writer, "%s </vector>\n", vectorStr)
+		}
+		fmt.Fprintf(writer, "      </ic>\n")
+
+	}
+	writer.WriteString("    </manufacturer>\n")
+	writer.WriteString("  </database>\n")
+	writer.WriteString("</infoic>\n")
 	writer.Flush()
 	return nil
 }
