@@ -47,6 +47,7 @@ Flags:
 
       --toml              Output as toml
       --json              Output as json
+      --xml               Output as xml
 ```
 
 `describe <path>` which reads an `.lgc` file and dumps some information about the contents to stdout:
@@ -62,7 +63,7 @@ Entry #0
                 #1: 0 1 0 G 0 0 0 V 
 ```
 
-You can supply the optional flags `--toml` or `--json` to pipe the data into another tool (such as `jq`).
+You can supply the optional flags `--toml`, `--json` or `--xml` to pipe the data into another tool (such as `jq`).
 
 ### LGC
 `lgc <input> <output>` reads an input file and outputs an `.lgc` file that can be imported into the Xgpro tool.
@@ -152,6 +153,36 @@ The json format is structurally identical to the `toml` format.
 }
 ```
 
+### Example XML file
+
+The xml format is made to be compatible with the linux/mac version of minipro.
+
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<infoic>
+  <database device="TL866II">
+    <manufacturer name="Logic Ic">
+      <ic name="OLI's IC" pins="8" voltage="5.0V" type="5">
+        <vector id="00"> 1 0 0 G 0 0 0 V </vector>
+        <vector id="01"> 0 1 0 G 0 0 0 V </vector>
+      </ic>
+      <ic name="Another IC" pins="10" voltage="3.3V" type="5">
+        <vector id="00"> 1 0 0 0 G 0 0 0 0 V </vector>
+        <vector id="01"> 0 1 0 0 G 0 0 0 0 V </vector>
+      </ic>
+    </manufacturer>
+  </database>
+</infoic>
+```
+
+WARNING: The voltage and type in minipro are always 5V and 5 respectively for all ICs, so
+it might be that these are not used. In this xml export implementation, voltage will output vcc
+and type is hardcoded to 5.
+```
+$xgpro-logic describe examples/test_1j.lgc --xml > examples/test_1j.xml
+
+$minipro -logicic examples/test_1j.xml -p "OLI's IC" -T
+```
 
 ## Building
 

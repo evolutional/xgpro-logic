@@ -15,6 +15,7 @@ type ViewCmd struct {
 	Path       string `arg required help:"Input path." type:"path"`
 	Toml       bool   `xor:"format" help:"Output as toml" type:"bool"`
 	Json       bool   `xor:"format" help:"Output as json" type:"bool"`
+	Xml        bool   `xor:"format" help:"Output as xml" type:"bool"`
 	OutputFile string `short:"o" help:"Output file path." type:"path"`
 }
 
@@ -44,6 +45,9 @@ func (cmd *ViewCmd) Run(globals *Globals) error {
 	}
 	if cmd.Json {
 		return xgpro.DescribeJson(lgc, file)
+	}
+	if cmd.Xml {
+		return xgpro.DescribeXml(lgc, file)
 	}
 
 	return xgpro.DumpLGCFile(lgc, file)
