@@ -1,6 +1,6 @@
 module github.com/evolutional/xgpro-logic
 
-go 1.13
+go 1.18
 
 require (
 	github.com/BurntSushi/toml v0.3.1
