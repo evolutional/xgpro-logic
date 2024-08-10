@@ -114,17 +114,17 @@ func ParseTomlFile(fileName string) (*lgcFile, error) {
 }
 
 func DescribeToml(lgc *lgcFile, file *os.File) error {
-	writer := bufio.NewWriter(os.Stdout)
+	writer := bufio.NewWriter(file)
 	return writeToml(writer, lgc)
 }
 
 func DescribeJson(lgc *lgcFile, file *os.File) error {
-	writer := bufio.NewWriter(os.Stdout)
+	writer := bufio.NewWriter(file)
 	return writeJson(writer, lgc)
 }
 
 func DescribeXml(lgc *lgcFile, file *os.File) error {
-	writer := bufio.NewWriter(os.Stdout)
+	writer := bufio.NewWriter(file)
 	return writeXml(writer, lgc)
 }
 
