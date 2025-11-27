@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<logicic>
+  <database device="TL866II" type="LOGIC">
+    <manufacturer name="Logic Ic">
+      <ic name="OLI's IC" pins="8" voltage="5V" type="5">
+        <vector id="00"> 1 0 0 G 0 0 0 V </vector>
+        <vector id="01"> 0 1 0 G 0 0 0 V </vector>
+      </ic>
+      <ic name="Another IC" pins="10" voltage="3.3V" type="5">
+        <vector id="00"> 1 0 0 0 G 0 0 0 0 V </vector>
+        <vector id="01"> 0 1 0 0 G 0 0 0 0 V </vector>
+      </ic>
+    </manufacturer>
+  </database>
+</logicic>

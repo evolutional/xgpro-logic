@@ -159,10 +159,10 @@ The xml format is made to be compatible with the linux/mac version of minipro.
 
 ```xml
 <?xml version="1.0" encoding="utf-8"?>
-<infoic>
-  <database device="TL866II">
+<logicic>
+  <database device="TL866II" type="LOGIC">
     <manufacturer name="Logic Ic">
-      <ic name="OLI's IC" pins="8" voltage="5.0V" type="5">
+      <ic name="OLI's IC" pins="8" voltage="5V" type="5">
         <vector id="00"> 1 0 0 G 0 0 0 V </vector>
         <vector id="01"> 0 1 0 G 0 0 0 V </vector>
       </ic>
@@ -172,21 +172,23 @@ The xml format is made to be compatible with the linux/mac version of minipro.
       </ic>
     </manufacturer>
   </database>
-</infoic>
+</logicic>
 ```
 
 WARNING: The voltage and type in minipro are always 5V and 5 respectively for all ICs, so
 it might be that these are not used. In this xml export implementation, voltage will output vcc
 and type is hardcoded to 5.
 ```
-$xgpro-logic describe examples/test_1j.lgc --xml > examples/test_1j.xml
+xgpro-logic describe examples/test_1j.lgc --xml > examples/test_1j.xml
 
-$minipro -logicic examples/test_1j.xml -p "OLI's IC" -T
+minipro --logicic examples/test_1j.xml -p "OLI's IC" -T
 ```
 
 ## Building
 
-Clone the repository and run `go build  -o xgpro-logic cmd/xgpro-logic.app/main.go` to create the binary file.
+Clone the repository and run: `go mod tidy` to fetch the dependencies.
+
+Then run `go build  -o xgpro-logic cmd/xgpro-logic.app/main.go` to create the binary file.
 
 
 ## Thanks

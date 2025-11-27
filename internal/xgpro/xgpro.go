@@ -9,6 +9,7 @@ import (
 	"hash/crc32"
 	"io"
 	"os"
+	"strconv"
 	"strings"
 	"unicode"
 
@@ -487,8 +488,8 @@ func writeJson(writer *bufio.Writer, lgc *lgcFile) error {
 
 func writeXml(writer *bufio.Writer, lgc *lgcFile) error {
 	writer.WriteString("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n")
-	writer.WriteString("<infoic>\n")
-	writer.WriteString("  <database device=\"TL866II\">\n")
+	writer.WriteString("<logicic>\n")
+	writer.WriteString("  <database device=\"TL866II\" type=\"LOGIC\">\n")
 	writer.WriteString("    <manufacturer name=\"Logic Ic\">\n")
 	for icID := 0; icID < int(lgc.header.ItemCount); icID++ {
 		entry := &lgc.entries[icID]
@@ -498,7 +499,7 @@ func writeXml(writer *bufio.Writer, lgc *lgcFile) error {
 		writer.WriteString("      <ic ")
 		fmt.Fprintf(writer, "name=\"%s\" ", itemName)
 		fmt.Fprintf(writer, "pins=\"%d\" ", entry.item.PinCount)
-		fmt.Fprintf(writer, "voltage=\"%0.1fV\" type=\"5\">\n", unmapVoltageLevel(entry.item.VoltageLevel))
+		fmt.Fprintf(writer, "voltage=\"%sV\" type=\"5\">\n", strconv.FormatFloat(unmapVoltageLevel(entry.item.VoltageLevel), 'f', -1, 64))
 
 		for vectorID := 0; vectorID < int(entry.item.VectorCount); vectorID++ {
 
@@ -517,7 +518,7 @@ func writeXml(writer *bufio.Writer, lgc *lgcFile) error {
 	}
 	writer.WriteString("    </manufacturer>\n")
 	writer.WriteString("  </database>\n")
-	writer.WriteString("</infoic>\n")
+	writer.WriteString("</logicic>\n")
 	writer.Flush()
 	return nil
 }
