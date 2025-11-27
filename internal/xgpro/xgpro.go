@@ -14,6 +14,7 @@ import (
 	"unicode"
 
 	"github.com/komkom/toml"
+	"gopkg.in/yaml.v3"
 )
 
 const (
@@ -97,6 +98,24 @@ func ParseJsonFile(fileName string) (*lgcFile, error) {
 	return parseJsonFile(&f)
 }
 
+func ParseYamlFile(fileName string) (*lgcFile, error) {
+	file, err := os.Open(fileName)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to open file: %s", err)
+	}
+	defer file.Close()
+
+	decoder := yaml.NewDecoder(file)
+
+	f := tomlFile{}
+	err = decoder.Decode(&f)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to decode yaml file: %s", err)
+	}
+
+	return parseJsonFile(&f)
+}
+
 func ParseTomlFile(fileName string) (*lgcFile, error) {
 	file, err := os.Open(fileName)
 	if err != nil {
@@ -127,6 +146,11 @@ func DescribeJson(lgc *lgcFile, file *os.File) error {
 func DescribeXml(lgc *lgcFile, file *os.File) error {
 	writer := bufio.NewWriter(file)
 	return writeXml(writer, lgc)
+}
+
+func DescribeYaml(lgc *lgcFile, file *os.File) error {
+	writer := bufio.NewWriter(file)
+	return writeYaml(writer, lgc)
 }
 
 func WriteToml(fileName string, lgc *lgcFile) error {
@@ -221,6 +245,10 @@ func ConvertFile(inputFileName string, inputFormat string, outputFileName string
 		lgc, err = ParseTomlFile(inputFileName)
 	case "json":
 		lgc, err = ParseJsonFile(inputFileName)
+	case "yaml":
+		lgc, err = ParseYamlFile(inputFileName)
+	default:
+		return fmt.Errorf("Unknown format: %s", inputFormat)
 	}
 
 	if err != nil {
@@ -519,6 +547,37 @@ func writeXml(writer *bufio.Writer, lgc *lgcFile) error {
 	writer.WriteString("    </manufacturer>\n")
 	writer.WriteString("  </database>\n")
 	writer.WriteString("</logicic>\n")
+	writer.Flush()
+	return nil
+}
+
+func writeYaml(writer *bufio.Writer, lgc *lgcFile) error {
+	writer.WriteString("ics:\n")
+
+	for icID := 0; icID < int(lgc.header.ItemCount); icID++ {
+		entry := &lgc.entries[icID]
+
+		itemName := cleanItemName(entry.item.ItemName)
+		fmt.Fprintf(writer, "  - name: \"%s\"\n", itemName)
+		fmt.Fprintf(writer, "    pins: %d\n", entry.item.PinCount)
+		fmt.Fprintf(writer, "    vcc: %s\n", strconv.FormatFloat(unmapVoltageLevel(entry.item.VoltageLevel), 'f', -1, 64))
+		fmt.Fprintf(writer, "    vectors:\n")
+
+		for vectorID := 0; vectorID < int(entry.item.VectorCount); vectorID++ {
+
+			vectorStr := ""
+			vector := entry.vectors[vectorID]
+
+			for vecByte := 0; vecByte < int(entry.item.PinCount/2); vecByte++ {
+				pinLow := mapVector(vector.Vectors[vecByte] >> 4)
+				pinHigh := mapVector(vector.Vectors[vecByte] & 0x0F)
+				vectorStr = fmt.Sprintf("%s%s%s", vectorStr, pinHigh, pinLow)
+			}
+
+			fmt.Fprintf(writer, "      - %s\n", vectorStr)
+		}
+	}
+	writer.WriteString("\n")
 	writer.Flush()
 	return nil
 }

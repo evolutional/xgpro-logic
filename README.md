@@ -7,9 +7,10 @@ The programmer has a useful "IC Test" function that allows one to run logic test
 It allows you to inspect `.lgc` files and convert them to/from the following formats:
 - [toml](https://github.com/toml-lang/toml)
 - json
-- minipro `logicic.xml`
+- yaml
+- minipro `logicic.xml` (output only)
 
-With the file in a toml format you can add your own logic vector descriptions much faster and then convert back into the `.lgc` format to import into the Xgpro tool.
+With the file in `toml`, `json` or `yaml` formats you can add your own logic vector descriptions much faster and then convert back into the `.lgc` format to import into the Xgpro tool.
 
 ## Usage
 
@@ -85,7 +86,7 @@ Flags:
   -f, --input-format="toml"
 ```
 
-The input format can either be `toml` or `json` (minipro's logicic xml is not supported at this time).
+The input format can either be `toml`, `json` or `yaml` (minipro's logicic xml is not supported at this time).
 
 ### Example TOML file
 
@@ -153,6 +154,27 @@ The json format is structurally identical to the `toml` format.
     ]
 }
 ```
+
+### Example YAML file
+
+The json format is structurally identical to the `toml` and `json` formats.
+
+```yaml
+ics:
+  - name: "OLI's IC"
+    pins: 8
+    vcc: 5
+    vectors:
+      - 100G000V
+      - 010G000V
+  - name: "Another IC"
+    pins: 10
+    vcc: 3.3
+    vectors:
+      - 1000G0000V
+      - 0100G0000V
+```
+
 
 ### Example XML file
 

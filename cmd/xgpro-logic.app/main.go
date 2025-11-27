@@ -16,13 +16,14 @@ type ViewCmd struct {
 	Toml       bool   `xor:"format" help:"Output as toml" type:"bool"`
 	Json       bool   `xor:"format" help:"Output as json" type:"bool"`
 	Xml        bool   `xor:"format" help:"Output as xml" type:"bool"`
+	Yaml       bool   `xor:"format" help:"Output as yaml" type:"bool"`
 	OutputFile string `short:"o" help:"Output file path." type:"path"`
 }
 
 type CreateLgcCmd struct {
 	Path        string `arg required help:"Input path." type:"path"`
 	OutputPath  string `arg required help:"Output path of created lgc file." type:"path"`
-	InputFormat string `short:"f" enum:"json,toml" default:"toml" help"Format of the input file"`
+	InputFormat string `short:"f" enum:"json,toml,yaml" default:"toml" help"Format of the input file"`
 }
 
 func (cmd *ViewCmd) Run(globals *Globals) error {
@@ -48,6 +49,9 @@ func (cmd *ViewCmd) Run(globals *Globals) error {
 	}
 	if cmd.Xml {
 		return xgpro.DescribeXml(lgc, file)
+	}
+	if cmd.Yaml {
+		return xgpro.DescribeYaml(lgc, file)
 	}
 
 	return xgpro.DumpLGCFile(lgc, file)
