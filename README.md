@@ -4,7 +4,10 @@ This is a little commandline utility that makes working with the XGecu Universal
 
 The programmer has a useful "IC Test" function that allows one to run logic tests on a chip. However the user interface for working with that functionality is... not great.
 
-It allows you to inspect `.lgc` files and convert them to/from [toml](https://github.com/toml-lang/toml) format.
+It allows you to inspect `.lgc` files and convert them to/from the following formats:
+- [toml](https://github.com/toml-lang/toml)
+- json
+- minipro `logicic.xml`
 
 With the file in a toml format you can add your own logic vector descriptions much faster and then convert back into the `.lgc` format to import into the Xgpro tool.
 
@@ -18,15 +21,14 @@ For more information run `./xgpro-logic --help`
 Usage: xgpro-logic <command>
 
 Flags:
-  -h, --help              Show context-sensitive help.
-      --version=STRING
+  -h, --help    Show context-sensitive help.
 
 Commands:
   describe <path>
     Describes an .lgc file to stdout
 
   lgc <path> <output-path>
-    Create a lgc file from a toml file
+    Create a lgc file from an input file
 
 Run "xgpro-logic <command> --help" for more information on a command.
 ```
@@ -43,11 +45,11 @@ Arguments:
 
 Flags:
   -h, --help              Show context-sensitive help.
-      --version=STRING
 
       --toml              Output as toml
       --json              Output as json
       --xml               Output as xml
+  -o, --output-file=STRING    Output file path.
 ```
 
 `describe <path>` which reads an `.lgc` file and dumps some information about the contents to stdout:
@@ -79,12 +81,11 @@ Arguments:
 
 Flags:
   -h, --help                   Show context-sensitive help.
-      --version=STRING
 
   -f, --input-format="toml"
 ```
 
-The input format can either be `toml` or `json`.
+The input format can either be `toml` or `json` (minipro's logicic xml is not supported at this time).
 
 ### Example TOML file
 
@@ -178,7 +179,8 @@ The xml format is made to be compatible with the linux/mac version of minipro.
 WARNING: The voltage and type in minipro are always 5V and 5 respectively for all ICs, so
 it might be that these are not used. In this xml export implementation, voltage will output vcc
 and type is hardcoded to 5.
-```
+
+```bash
 xgpro-logic describe examples/test_1j.lgc --xml > examples/test_1j.xml
 
 minipro --logicic examples/test_1j.xml -p "OLI's IC" -T
@@ -188,7 +190,7 @@ minipro --logicic examples/test_1j.xml -p "OLI's IC" -T
 
 Clone the repository and run: `go mod tidy` to fetch the dependencies.
 
-Then run `go build  -o xgpro-logic ./cmd/xgpro-logic.app/main.go` to create the binary file.
+Then run `go build -o build/xgpro-logic ./cmd/xgpro-logic.app/main.go` to create the binary file.
 
 Alternatively, if your platform supports `make`, then run `make build` and find the output in the `build` directory.
 
