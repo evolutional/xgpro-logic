@@ -188,8 +188,9 @@ minipro --logicic examples/test_1j.xml -p "OLI's IC" -T
 
 Clone the repository and run: `go mod tidy` to fetch the dependencies.
 
-Then run `go build  -o xgpro-logic cmd/xgpro-logic.app/main.go` to create the binary file.
+Then run `go build  -o xgpro-logic ./cmd/xgpro-logic.app/main.go` to create the binary file.
 
+Alternatively, if your platform supports `make`, then run `make build` and find the output in the `build` directory.
 
 ## Thanks
 
